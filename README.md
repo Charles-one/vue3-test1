@@ -147,10 +147,6 @@ npm run build
 - Safari >= 13
 - Edge >= 88
 
-## 许可证
-
-[MIT](LICENSE)
-
 ## 作者
 
 - 作者：Charles
