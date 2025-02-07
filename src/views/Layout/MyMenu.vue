@@ -1,9 +1,16 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const isCollapse = ref(false)
+const props = defineProps({
+  isClose: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const isCollapse = computed(() => props.isClose)
 
 const handleSelect = (key) => {
   router.push(key)
@@ -52,7 +59,7 @@ const menuItems = [
     index: '/permissions'
   },
   {
-    icon: 'DataLine',  // 添加数据分析图标
+    icon: 'DataLine', // 添加数据分析图标
     title: '数据分析',
     index: '/analysis'
   }
@@ -79,14 +86,14 @@ const menuItems = [
           <el-icon><component :is="item.icon" /></el-icon>
           <template #title>{{ item.title }}</template>
         </el-menu-item>
-        
+
         <!-- 有子菜单的项目 -->
         <el-sub-menu v-else :index="item.index">
           <template #title>
             <el-icon><component :is="item.icon" /></el-icon>
             <span>{{ item.title }}</span>
           </template>
-          <el-menu-item 
+          <el-menu-item
             v-for="subItem in item.children"
             :key="subItem.index"
             :index="subItem.index"
