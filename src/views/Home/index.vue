@@ -45,13 +45,7 @@ const systemInfo = ref({
     },
     {
       category: '工程化',
-      items: [
-        'Vite 构建工具',
-        'ESLint 代码规范',
-        'Prettier 代码格式化',
-        'Git 版本控制',
-        'TypeScript 类型检查'
-      ]
+      items: ['Vite 构建工具', 'Prettier 代码格式化', 'Git 版本控制']
     },
     {
       category: '项目亮点',
@@ -78,7 +72,11 @@ const systemInfo = ref({
     <div class="features-section">
       <h2>系统功能</h2>
       <div class="features-grid">
-        <el-card v-for="feature in systemInfo.features" :key="feature.title" class="feature-card">
+        <el-card
+          v-for="feature in systemInfo.features"
+          :key="feature.title"
+          class="feature-card"
+        >
           <h3>{{ feature.title }}</h3>
           <p>{{ feature.desc }}</p>
         </el-card>
@@ -88,18 +86,18 @@ const systemInfo = ref({
     <div class="tech-section">
       <h2>技术选型</h2>
       <div class="tech-grid">
-        <el-card v-for="tech in systemInfo.techStack" :key="tech.category" class="tech-card">
+        <el-card
+          v-for="tech in systemInfo.techStack"
+          :key="tech.category"
+          class="tech-card"
+        >
           <template #header>
             <div class="tech-header">
               {{ tech.category }}
             </div>
           </template>
           <div class="tech-items">
-            <el-tag
-              v-for="item in tech.items"
-              :key="item"
-              class="tech-tag"
-            >
+            <el-tag v-for="item in tech.items" :key="item" class="tech-tag">
               {{ item }}
             </el-tag>
           </div>
@@ -146,7 +144,7 @@ h2 {
   color: #303133;
   margin-bottom: 20px;
   padding-left: 10px;
-  border-left: 4px solid #409EFF;
+  border-left: 4px solid #409eff;
 }
 
 .features-grid {
@@ -198,7 +196,7 @@ h2 {
 
 :deep(.el-card__header) {
   padding: 15px 20px;
-  border-bottom: 1px solid #EBEEF5;
+  border-bottom: 1px solid #ebeef5;
 }
 
 :deep(.el-card__body) {
