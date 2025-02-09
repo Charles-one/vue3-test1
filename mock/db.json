@@ -14,7 +14,7 @@
       "name": "香蕉",
       "category": "水果",
       "price": 3.99,
-      "stock": 145,
+      "stock": 143,
       "status": 1,
       "image": "https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png"
     },
@@ -102,13 +102,13 @@
     {
       "id": "1",
       "name": "家电 数码1",
-      "sort": 104,
+      "sort": 1,
       "createTime": "2021-03-08 18:56:00"
     },
     {
       "id": "2",
       "name": "aaaa",
-      "sort": 1,
+      "sort": 2,
       "createTime": "2025-02-02 13:40:03"
     }
   ],
@@ -241,6 +241,23 @@
         "quantity": 3,
         "image": "https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png",
         "totalPrice": "17.97"
+      }
+    },
+    {
+      "id": "17391094090016704",
+      "goodId": "2",
+      "goodName": "香蕉",
+      "price": "7.98",
+      "quantity": 2,
+      "status": "已支付",
+      "paymentMethod": "支付宝",
+      "createTime": "2025/2/9 21:56:49",
+      "goodInfo": {
+        "name": "香蕉",
+        "price": 3.99,
+        "quantity": 2,
+        "image": "https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png",
+        "totalPrice": "7.98"
       }
     }
   ],

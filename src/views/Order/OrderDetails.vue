@@ -1,27 +1,27 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getOrderList } from '@/api/order'
 import { ElMessage } from 'element-plus'
 import LazyImage from '@/components/LazyImage.vue'
 
 const route = useRoute()
-const router = useRouter()
 const orderInfo = ref({})
 
 // 获取订单详情
 const getOrderDetail = async () => {
-  // 如果没有订单ID，不发起请求
+  // 检查是否有订单ID
   if (!route.query.id) {
+    ElMessage.warning('未找到订单ID')
     return
   }
 
   try {
-    const res = await getOrderList({
-      orderId: route.query.id
-    })
+    const res = await getOrderList({ orderId: route.query.id })
     if (res.code === 200 && res.data.list.length > 0) {
-      orderInfo.value = res.data.list[0]  // 获取匹配的订单信息
+      orderInfo.value = res.data.list[0]
+    } else {
+      ElMessage.warning('未找到订单信息')
     }
   } catch (error) {
     console.error('获取订单详情失败:', error)
@@ -37,28 +37,33 @@ onMounted(() => {
 <template>
   <div class="order-detail">
     <h2>订单详情</h2>
-    
+
     <!-- 添加空状态显示 -->
     <div v-if="!route.query.id" class="empty-state">
       <el-empty description="请前往订单列表选择订单">
-        <el-button type="primary" @click="router.push('/orders/orderlist')">
+        <el-button type="primary" @click="$router.push('/orders/orderlist')">
           前往订单列表
         </el-button>
       </el-empty>
     </div>
-    
-    <!-- 订单基本信息 -->
-    <div v-else class="order-info">
+
+    <!-- 订单信息展示 -->
+    <div v-else-if="orderInfo.id" class="order-info">
       <div class="info-item">
         <span class="label">订单号：</span>
         <span>{{ orderInfo.id }}</span>
       </div>
-      
+
       <div class="info-item">
         <span class="label">订单状态：</span>
-        <el-tag 
-          :type="orderInfo.status === '出库成功' ? 'success' : 
-                orderInfo.status === '待支付' ? 'warning' : 'info'"
+        <el-tag
+          :type="
+            orderInfo.status === '出库成功'
+              ? 'success'
+              : orderInfo.status === '待支付'
+              ? 'warning'
+              : 'info'
+          "
         >
           {{ orderInfo.status }}
         </el-tag>
@@ -86,7 +91,7 @@ onMounted(() => {
           <LazyImage
             :src="orderInfo.goodInfo.image"
             :alt="orderInfo.goodInfo.name"
-            style="width: 100px; height: 100px; border-radius: 4px;"
+            style="width: 100px; height: 100px; border-radius: 4px"
           />
           <div class="good-content">
             <div class="info-row">
@@ -103,11 +108,18 @@ onMounted(() => {
             </div>
             <div class="info-row">
               <span class="label">商品总价：</span>
-              <span class="total-price">¥{{ orderInfo.goodInfo.totalPrice }}</span>
+              <span class="total-price"
+                >¥{{ orderInfo.goodInfo.totalPrice }}</span
+              >
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 加载失败状态 -->
+    <div v-else class="empty-state">
+      <el-empty description="未找到订单信息" />
     </div>
   </div>
 </template>
@@ -116,6 +128,13 @@ onMounted(() => {
 .order-detail {
   padding: 20px;
   background-color: #fff;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
 .order-info {
@@ -174,25 +193,5 @@ onMounted(() => {
 .total-price {
   color: #f56c6c;
   font-weight: bold;
-}
-
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
-}
-
-:deep(.el-empty__description) {
-  margin-top: 20px;
-  font-size: 16px;
-  color: #909399;
-}
-
-:deep(.el-button) {
-  margin-top: 20px;
 }
 </style>
