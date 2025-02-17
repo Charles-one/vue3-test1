@@ -1,7 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getGoodsList, addGoods, uploadImage, editGoods, deleteGoods } from '@/api/goods'
+import {
+  getGoodsList,
+  addGoods,
+  uploadImage,
+  editGoods,
+  deleteGoods
+} from '@/api/goods'
 import { createOrder } from '@/api/order'
 import { useRouter } from 'vue-router'
 import { Search, RefreshLeft } from '@element-plus/icons-vue'
@@ -10,12 +16,12 @@ import LazyImage from '@/components/LazyImage.vue'
 
 const goodsStore = useGoodsStore()
 
-// 使用 store 中的商品数据
-const goodsList = computed(() => goodsStore.goodsList)
+// 使用计算属性获取商品列表
+const tableData = computed(() => goodsStore.goodsList)
 const loading = computed(() => goodsStore.loading)
 
 // 表格数据
-const tableData = ref([])  // 初始化为空数组，数据会从后端获取
+// const currentTableData = ref([]) // 初始化为空数组，数据会从后端获取
 
 // 搜索表单
 const searchForm = ref({
@@ -50,23 +56,27 @@ const editForm = ref({
 
 // 表单规则
 const rules = {
-  name: [
-    { required: true, message: '请输入商品名称', trigger: 'blur' }
-  ],
-  category: [
-    { required: true, message: '请输入商品分类', trigger: 'blur' }
-  ],
+  name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
+  category: [{ required: true, message: '请输入商品分类', trigger: 'blur' }],
   price: [
     { required: true, message: '请输入商品价格', trigger: 'blur' },
-    { type: 'number', message: '价格必须为数字', trigger: 'blur', transform: (value) => Number(value) }
+    {
+      type: 'number',
+      message: '价格必须为数字',
+      trigger: 'blur',
+      transform: (value) => Number(value)
+    }
   ],
   stock: [
     { required: true, message: '请输入库存数量', trigger: 'blur' },
-    { type: 'number', message: '库存必须为数字', trigger: 'blur', transform: (value) => Number(value) }
+    {
+      type: 'number',
+      message: '库存必须为数字',
+      trigger: 'blur',
+      transform: (value) => Number(value)
+    }
   ],
-  image: [
-    { required: true, message: '请上传商品图片', trigger: 'blur' }
-  ]
+  image: [{ required: true, message: '请上传商品图片', trigger: 'blur' }]
 }
 
 const addFormRef = ref(null)
@@ -86,29 +96,33 @@ const currentTableData = computed(() => {
 // 处理搜索
 const handleSearch = () => {
   // 根据搜索条件过滤表格数据
-  const filteredData = tableData.value.filter(item => {
-    const nameMatch = item.name.toLowerCase().includes(searchForm.value.name.toLowerCase())
-    const categoryMatch = item.category.toLowerCase().includes(searchForm.value.category.toLowerCase())
-    
+  const filteredData = tableData.value.filter((item) => {
+    const nameMatch = item.name
+      .toLowerCase()
+      .includes(searchForm.value.name.toLowerCase())
+    const categoryMatch = item.category
+      .toLowerCase()
+      .includes(searchForm.value.category.toLowerCase())
+
     // 如果都没有输入搜索条件，返回所有数据
     if (!searchForm.value.name && !searchForm.value.category) {
       return true
     }
-    
+
     // 如果只输入了商品名称
     if (searchForm.value.name && !searchForm.value.category) {
       return nameMatch
     }
-    
+
     // 如果只输入了商品分类
     if (!searchForm.value.name && searchForm.value.category) {
       return categoryMatch
     }
-    
+
     // 如果两个条件都输入了
     return nameMatch && categoryMatch
   })
-  
+
   // 更新表格数据
   tableData.value = filteredData
 }
@@ -120,43 +134,77 @@ const handleReset = () => {
     name: '',
     category: ''
   }
-  
+
   // 重新获取所有数据
   fetchGoodsList()
 }
 
 // 处理添加
 const handleAdd = () => {
+  // 重置表单数据
+  addForm.value = {
+    name: '',
+    category: '',
+    price: '',
+    stock: '',
+    image: '',
+    status: 1
+  }
+  // 显示对话框
   dialogVisible.value = true
+}
+
+// 添加提交表单的方法
+const submitAdd = async () => {
+  if (!addFormRef.value) return
+
+  try {
+    await addFormRef.value.validate()
+    const res = await goodsStore.addGoods(addForm.value)
+    if (res.code === 200) {
+      ElMessage.success('添加成功')
+      dialogVisible.value = false
+      // 重置表单
+      addForm.value = {
+        name: '',
+        category: '',
+        price: '',
+        stock: '',
+        image: '',
+        status: 1
+      }
+    }
+  } catch (error) {
+    console.error('添加商品失败:', error)
+    ElMessage.error('添加失败')
+  }
 }
 
 // 处理编辑
 const handleEdit = (row) => {
-  editForm.value = { ...row }  // 复制当前行的数据到编辑表单
+  editForm.value = { ...row } // 复制当前行的数据到编辑表单
   editDialogVisible.value = true
 }
 
 // 处理删除
-const handleDelete = (row) => {
-  ElMessageBox.confirm(
-    '确定要删除该商品吗？',
-    '提示',
-    {
+const handleDelete = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该商品吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(async () => {
-    try {
-      await goodsStore.deleteGoods(row.id)
+      type: 'warning'
+    })
+
+    const res = await goodsStore.deleteGoods(id)
+    if (res.code === 200) {
       ElMessage.success('删除成功')
-    } catch (error) {
-      console.error('删除失败:', error)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除商品失败:', error)
       ElMessage.error('删除失败')
     }
-  }).catch(() => {
-    ElMessage.info('已取消删除')
-  })
+  }
 }
 
 // 处理页码改变
@@ -167,7 +215,7 @@ const handleCurrentChange = (val) => {
 // 处理每页条数改变
 const handleSizeChange = (val) => {
   pageSize.value = val
-  currentPage.value = 1  // 重置到第一页
+  currentPage.value = 1 // 重置到第一页
 }
 
 // 获取商品列表
@@ -181,27 +229,6 @@ const fetchGoodsList = async () => {
   } catch (error) {
     console.error('获取商品列表失败:', error)
     ElMessage.error('获取商品列表失败')
-  }
-}
-
-// 提交表单（添加商品）
-const submitForm = async () => {
-  if (!addFormRef.value) return
-  
-  try {
-    await addFormRef.value.validate()
-    
-    // 调用添加商品接口
-    await goodsStore.addGoods(addForm.value)
-    
-    // 关闭对话框并重置表单
-    dialogVisible.value = false
-    addFormRef.value.resetFields()
-    
-    ElMessage.success('添加商品成功')
-  } catch (error) {
-    console.error('添加商品失败:', error)
-    ElMessage.error('添加商品失败，请重试')
   }
 }
 
@@ -236,7 +263,7 @@ const beforeAvatarUpload = (file) => {
     return false
   }
 
-  return true  // 返回 true，允许选择文件
+  return true // 返回 true，允许选择文件
 }
 
 // 取消添加
@@ -250,7 +277,7 @@ const submitEdit = async () => {
   try {
     // 调用编辑商品接口
     await goodsStore.editGoods(editForm.value)
-    
+
     editDialogVisible.value = false
     ElMessage.success('编辑商品成功')
   } catch (error) {
@@ -296,7 +323,7 @@ const handleBuy = (row) => {
     ElMessage.warning('商品库存不足')
     return
   }
-  
+
   buyForm.value = {
     goodId: row.id,
     goodName: row.name,
@@ -313,9 +340,11 @@ const router = useRouter()
 
 // 添加生成随机订单号的方法
 const generateOrderId = () => {
-  const timestamp = new Date().getTime().toString()  // 13位时间戳
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')  // 4位随机数
-  return timestamp + random  // 17位订单号
+  const timestamp = new Date().getTime().toString() // 13位时间戳
+  const random = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, '0') // 4位随机数
+  return timestamp + random // 17位订单号
 }
 
 // 修改确认购买方法
@@ -349,23 +378,23 @@ const confirmBuy = async () => {
 
     // 调用创建订单 API
     const res = await createOrder(orderData)
-    
+
     if (res.code === 200) {
       // 更新商品库存
       const updatedGood = {
-        ...tableData.value.find(item => item.id === buyForm.value.goodId),
-        stock: buyForm.value.stock - buyForm.value.quantity  // 减少库存
+        ...tableData.value.find((item) => item.id === buyForm.value.goodId),
+        stock: buyForm.value.stock - buyForm.value.quantity // 减少库存
       }
-      
+
       // 调用编辑商品API更新库存
       await goodsStore.editGoods(updatedGood)
-      
+
       ElMessage.success('购买成功')
       buyDialogVisible.value = false
-      
+
       // 重新获取商品列表以更新库存显示
       await fetchGoodsList()
-      
+
       // 跳转到订单列表页面
       router.push({
         name: 'orderlist'
@@ -389,7 +418,7 @@ const paymentMethods = [
 // 处理商品操作
 const handleGoods = async (action, data) => {
   try {
-    switch(action) {
+    switch (action) {
       case 'add':
         await goodsStore.addGoods(data)
         break
@@ -406,8 +435,13 @@ const handleGoods = async (action, data) => {
   }
 }
 
-onMounted(() => {
-  fetchGoodsList()
+// 在组件挂载时获取数据
+onMounted(async () => {
+  try {
+    await goodsStore.fetchGoods()
+  } catch (error) {
+    ElMessage.error('获取商品列表失败')
+  }
 })
 </script>
 
@@ -420,7 +454,10 @@ onMounted(() => {
           <el-input v-model="searchForm.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="商品分类">
-          <el-input v-model="searchForm.category" placeholder="请输入商品分类" />
+          <el-input
+            v-model="searchForm.category"
+            placeholder="请输入商品分类"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
@@ -450,16 +487,14 @@ onMounted(() => {
           <LazyImage
             :src="scope.row.image"
             :alt="scope.row.name"
-            style="width: 50px; height: 50px; border-radius: 4px;"
+            style="width: 50px; height: 50px; border-radius: 4px"
           />
         </template>
       </el-table-column>
       <el-table-column prop="name" label="商品名称" />
       <el-table-column prop="category" label="商品分类" />
       <el-table-column prop="price" label="价格">
-        <template #default="scope">
-          ¥{{ scope.row.price }}
-        </template>
+        <template #default="scope"> ¥{{ scope.row.price }} </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" />
       <el-table-column prop="status" label="状态">
@@ -472,13 +507,25 @@ onMounted(() => {
       <el-table-column label="操作" width="250">
         <template #default="scope">
           <div class="operation-buttons">
-            <el-button type="primary" size="small" @click="handleEdit(scope.row)">
+            <el-button
+              type="primary"
+              size="small"
+              @click="handleEdit(scope.row)"
+            >
               编辑
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(scope.row)">
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDelete(scope.row.id)"
+            >
               删除
             </el-button>
-            <el-button type="success" size="small" @click="handleBuy(scope.row)">
+            <el-button
+              type="success"
+              size="small"
+              @click="handleBuy(scope.row)"
+            >
               购买
             </el-button>
           </div>
@@ -528,32 +575,28 @@ onMounted(() => {
             </div>
           </el-upload>
         </el-form-item>
-        
+
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="addForm.name" placeholder="请输入商品名称" />
         </el-form-item>
-        
+
         <el-form-item label="商品分类" prop="category">
           <el-input v-model="addForm.category" placeholder="请输入商品分类" />
         </el-form-item>
-        
+
         <el-form-item label="商品价格" prop="price">
-          <el-input-number 
-            v-model="addForm.price" 
-            :precision="2" 
-            :step="0.1" 
+          <el-input-number
+            v-model="addForm.price"
+            :precision="2"
+            :step="0.1"
             :min="0"
           />
         </el-form-item>
-        
+
         <el-form-item label="库存数量" prop="stock">
-          <el-input-number 
-            v-model="addForm.stock" 
-            :min="0" 
-            :precision="0"
-          />
+          <el-input-number v-model="addForm.stock" :min="0" :precision="0" />
         </el-form-item>
-        
+
         <el-form-item label="商品状态" prop="status">
           <el-switch
             v-model="addForm.status"
@@ -564,12 +607,12 @@ onMounted(() => {
           />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <div class="dialog-buttons">
             <el-button @click="cancelAdd">取消</el-button>
-            <el-button type="primary" @click="submitForm">确定</el-button>
+            <el-button type="primary" @click="submitAdd">确定</el-button>
           </div>
         </div>
       </template>
@@ -582,11 +625,7 @@ onMounted(() => {
       width="500px"
       @close="cancelEdit"
     >
-      <el-form
-        :model="editForm"
-        :rules="rules"
-        label-width="100px"
-      >
+      <el-form :model="editForm" :rules="rules" label-width="100px">
         <el-form-item label="商品图片" prop="image">
           <el-upload
             class="avatar-uploader"
@@ -603,32 +642,28 @@ onMounted(() => {
             </div>
           </el-upload>
         </el-form-item>
-        
+
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="editForm.name" placeholder="请输入商品名称" />
         </el-form-item>
-        
+
         <el-form-item label="商品分类" prop="category">
           <el-input v-model="editForm.category" placeholder="请输入商品分类" />
         </el-form-item>
-        
+
         <el-form-item label="商品价格" prop="price">
-          <el-input-number 
-            v-model="editForm.price" 
-            :precision="2" 
-            :step="0.1" 
+          <el-input-number
+            v-model="editForm.price"
+            :precision="2"
+            :step="0.1"
             :min="0"
           />
         </el-form-item>
-        
+
         <el-form-item label="库存数量" prop="stock">
-          <el-input-number 
-            v-model="editForm.stock" 
-            :min="0" 
-            :precision="0"
-          />
+          <el-input-number v-model="editForm.stock" :min="0" :precision="0" />
         </el-form-item>
-        
+
         <el-form-item label="商品状态" prop="status">
           <el-switch
             v-model="editForm.status"
@@ -639,7 +674,7 @@ onMounted(() => {
           />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <div class="dialog-buttons">
@@ -651,17 +686,13 @@ onMounted(() => {
     </el-dialog>
 
     <!-- 修改购买对话框 -->
-    <el-dialog
-      v-model="buyDialogVisible"
-      title="商品购买"
-      width="400px"
-    >
+    <el-dialog v-model="buyDialogVisible" title="商品购买" width="400px">
       <div class="buy-dialog-content">
         <div class="good-info">
           <LazyImage
             :src="buyForm.image"
             :alt="buyForm.goodName"
-            style="width: 100px; height: 100px; border-radius: 4px;"
+            style="width: 100px; height: 100px; border-radius: 4px"
           />
           <div class="good-details">
             <h3>{{ buyForm.goodName }}</h3>
@@ -669,10 +700,10 @@ onMounted(() => {
             <p class="stock">库存：{{ buyForm.stock }}</p>
           </div>
         </div>
-        
+
         <div class="quantity-selector">
           <span class="label">购买数量：</span>
-          <el-input-number 
+          <el-input-number
             v-model="buyForm.quantity"
             :min="1"
             :max="buyForm.stock"
@@ -691,13 +722,13 @@ onMounted(() => {
             />
           </el-select>
         </div>
-        
+
         <div class="total-price">
           <span class="label">总价：</span>
           <span class="price">¥{{ totalPrice }}</span>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <div class="dialog-buttons">
@@ -772,13 +803,13 @@ onMounted(() => {
 
 .dialog-buttons {
   display: flex;
-  gap: 10px;  /* 按钮之间的间距 */
-  justify-content: flex-end;  /* 靠右对齐 */
+  gap: 10px; /* 按钮之间的间距 */
+  justify-content: flex-end; /* 靠右对齐 */
 }
 
 .dialog-buttons .el-button {
-  margin-left: 0;  /* 覆盖默认的左边距 */
-  margin-right: 0;  /* 覆盖默认的右边距 */
+  margin-left: 0; /* 覆盖默认的左边距 */
+  margin-right: 0; /* 覆盖默认的右边距 */
 }
 
 .avatar-uploader-box {
@@ -825,7 +856,7 @@ onMounted(() => {
 .pagination-container {
   margin-top: 20px;
   display: flex;
-  justify-content: center;  /* 修改为居中对齐 */
+  justify-content: center; /* 修改为居中对齐 */
   padding: 10px 0;
 }
 
@@ -896,10 +927,10 @@ onMounted(() => {
 
 .operation-buttons {
   display: flex;
-  gap: 5px;  /* 按钮之间的间距 */
+  gap: 5px; /* 按钮之间的间距 */
 }
 
 .operation-buttons .el-button {
-  margin-right: 0;  /* 覆盖默认的右边距 */
+  margin-right: 0; /* 覆盖默认的右边距 */
 }
 </style>
